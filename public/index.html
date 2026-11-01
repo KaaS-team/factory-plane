@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>factory-plane cockpit</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell">
+  <aside id="left" aria-label="Tasks">
+    <header><h1>Tasks</h1>
+      <button id="gear" type="button" aria-expanded="false" aria-controls="settings" aria-label="Settings">⚙</button></header>
+    <div id="settings" hidden role="region" aria-labelledby="settings-title"></div>
+    <div id="list"></div>
+  </aside>
+  <main id="view" tabindex="-1">Select a task.</main>
+  <div id="composer"></div>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
