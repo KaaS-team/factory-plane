@@ -1,12 +1,12 @@
 // Browser entry. Wires the pure renderers to the DOM. Only runs in a browser.
-import { routeFromHash, REDIRECTS } from "../src/routes.js";
+import { routeFromHash, homeParams, REDIRECTS } from "../src/routes.js";
 import { PAGES, COMMANDS, match, createPalette } from "../src/palette.js";
 import { createComposer } from "../src/composer.js";
 import { createBatch } from "../src/line-comments.js";
 import { stageBlocks } from "../src/stage-blocks.js";
-import { groupRuns } from "../src/task-list.js";
+import { groupRuns, searchRuns, filterByRepo, repoList } from "../src/task-list.js";
 import { isPhone, SEGMENTS } from "../src/phone.js";
-import { renderTaskList, renderComposer } from "./view-home.js";
+import { renderTaskList, renderComposer, renderHome, renderQueue, renderSearch, renderRepoSwitcher } from "./view-home.js";
 import { renderStageBlocks } from "./view-run.js";
 import { renderSettings } from "./view-settings.js";
 import { renderPane, renderBatch } from "./view-pane.js";
@@ -14,7 +14,7 @@ import { renderPalette, renderSegments, renderPhoneTabs, renderSheet } from "./v
 import { keyAction, commandAction } from "./keys.js";
 
 const $ = (id) => document.getElementById(id);
-const composer = createComposer({ repos: [], branches: [], agents: [], runners: [] });
+let composer = createComposer({ repos: [], branches: [], agents: [], runners: [] });
 const batch = createBatch();
 const palette = createPalette(() => document.activeElement);
 let runs = [];
@@ -24,6 +24,12 @@ let paneTab = "outcome";
 let phoneTab = "Steps";
 let segment = SEGMENTS[0];
 let approved = false;
+let route = { view: "home" };
+let group = "all";
+let query = "";
+let repoFilter = "";
+const openStages = new Set();
+const fullStages = new Set();
 let results = COMMANDS;
 let active = 0;
 
@@ -35,8 +41,21 @@ async function getJSON(url) {
 
 const phone = () => isPhone(window.innerWidth);
 
+const chipOpts = () => ({ repos: repoList(runs), branches: [], agents: [], runners: [] });
+const onHome = () => route.view === "home";
+const formText = () => document.querySelector("form.composer textarea")?.value ?? "";
+
 function drawComposer() {
-  $("composer-form").innerHTML = renderComposer(composer.state, {}, composer.canSend($("composer-form").querySelector("textarea")?.value));
+  const text = formText();
+  const can = composer.canSend(text);
+  if (onHome()) {
+    $("composer-form").innerHTML = "";
+    $("view").innerHTML = renderHome(composer.state, chipOpts(), can, runs);
+  } else {
+    $("composer-form").innerHTML = renderQueue(composer.state.queue) + renderComposer(composer.state, chipOpts(), can);
+  }
+  const ta = document.querySelector("form.composer textarea");
+  if (ta && text) ta.value = text;
   $("batch").innerHTML = renderBatch(batch.items);
 }
 
@@ -57,14 +76,16 @@ function drawList() {
   const keys = { "Needs you": "needs", "Running": "running", "Done": "done" };
   const counts = Object.fromEntries(SEGMENTS.map((s) => [s, g[keys[s]].length]));
   $("segments").innerHTML = renderSegments(segment, counts);
-  const shown = phone() ? g[keys[segment]] : runs;
+  const scoped = searchRuns(filterByRepo(runs, repoFilter), query);
+  const shown = phone() ? groupRuns(scoped)[keys[segment]] : (group === "all" ? scoped : groupRuns(scoped)[group]);
   $("list").innerHTML = renderTaskList(shown);
+  $("list-tools").innerHTML = renderSearch(query) + renderRepoSwitcher(repoList(runs), repoFilter);
   if (runs.length === 0) $("list").insertAdjacentHTML("beforeend", `<p class="empty">No tasks. The data API is not built yet.</p>`);
 }
 
 function drawRun() {
   const view = $("view");
-  const blocks = renderStageBlocks(stageBlocks(current, current.stages ?? [], current.events ?? []));
+  const blocks = renderStageBlocks(stageBlocks(current, current.stages ?? [], current.events ?? [], { open: [...openStages], full: [...fullStages] }));
   if (!phone()) { view.innerHTML = blocks; return; }
   const body = phoneTab === "Steps" ? blocks
     : renderPane(current, phoneTab.toLowerCase(), me);
@@ -72,11 +93,12 @@ function drawRun() {
 }
 
 async function drawRoute() {
-  const route = routeFromHash(location.hash);
+  route = routeFromHash(location.hash);
   if (route.view === "redirect") { location.replace(`#/${route.redirect}`); return; }
   const view = $("view");
   document.body.dataset.screen = route.view === "home" && phone() ? "list" : (phone() ? "task" : "wide");
   current = null;
+  openStages.clear(); fullStages.clear();
   if (route.view === "run") {
     try {
       current = await getJSON(`/api/runs/${encodeURIComponent(route.jobID)}`);
@@ -88,8 +110,11 @@ async function drawRoute() {
   } else if (PAGES.includes(route.view)) {
     view.innerHTML = `<h2>${route.view}</h2><p class="empty">No data API serves this page yet.</p>`;
   } else {
-    view.textContent = "Select a task.";
+    group = homeParams(location.hash).group;
+    drawList();
+    drawComposer();
   }
+  if (!onHome()) drawComposer();
   drawPane();
   drawSheet();
 }
@@ -135,6 +160,8 @@ function choose(id) {
 
 async function load() {
   try { runs = await getJSON("/api/runs"); } catch { runs = []; }
+  composer = createComposer({ repos: repoList(runs), branches: [], agents: [], runners: [] });
+  if (onHome()) drawComposer();
   try { me = await getJSON("/api/me"); } catch { me = null; }
   drawList();
 }
@@ -181,27 +208,50 @@ $("batch").addEventListener("click", (e) => {
   const b = e.target.closest("[data-remove]");
   if (b) { batch.remove(Number(b.dataset.remove)); drawComposer(); }
 });
-$("composer-form").addEventListener("change", (e) => {
+document.addEventListener("change", (e) => {
+  if (!e.target.closest("form.composer")) return;
   const { name, value } = e.target;
   if (name === "mode") composer.setMode(value); else if (name && name !== "text") composer.pick(name, value);
   drawComposer();
 });
-$("composer-form").addEventListener("input", (e) => {
-  const text = e.target.value;
-  const keep = e.target.selectionStart;
-  drawComposer();
-  const ta = $("composer-form").querySelector("textarea");
-  ta.value = text; ta.focus(); ta.setSelectionRange(keep, keep);
-  $("composer-form").querySelector("button[type=submit]").disabled = !composer.canSend(text);
+document.addEventListener("input", (e) => {
+  if (!e.target.closest("form.composer") || e.target.name !== "text") return;
+  const btn = e.target.closest("form").querySelector("button[type=submit]");
+  btn.disabled = !composer.canSend(e.target.value);
 });
-$("composer-form").addEventListener("submit", (e) => {
+// On a task page Enter sends a steer; Shift+Enter adds a line.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.shiftKey || e.target.name !== "text" || onHome() || !current) return;
+  e.preventDefault();
+  if (composer.steer(e.target.value)) { e.target.value = ""; drawComposer(); }
+});
+document.addEventListener("submit", (e) => {
+  if (!e.target.closest("form.composer")) return;
   e.preventDefault();
   const ta = e.target.querySelector("textarea");
   if (!composer.canSend(ta.value)) return;
   const message = batch.send(ta.value);
   composer.send(message);
+  ta.value = "";
   drawComposer();
 });
+$("composer").addEventListener("click", (e) => {
+  const u = e.target.closest("[data-undo]");
+  if (u) { composer.undo(Number(u.dataset.undo)); drawComposer(); }
+});
+$("view").addEventListener("toggle", (e) => {
+  const name = e.target.dataset?.stage;
+  if (!name || !current) return;
+  if (e.target.open === openStages.has(name)) return;
+  if (e.target.open) openStages.add(name); else openStages.delete(name);
+  drawRun();
+}, true);
+$("view").addEventListener("click", (e) => {
+  const f = e.target.closest("[data-full]");
+  if (f) { fullStages.add(f.dataset.full); drawRun(); }
+});
+$("left").addEventListener("input", (e) => { if (e.target.id === "search") { query = e.target.value; drawList(); $("search").focus(); } });
+$("left").addEventListener("change", (e) => { if (e.target.id === "repo-switch") { repoFilter = e.target.value; drawList(); } });
 window.addEventListener("hashchange", drawRoute);
 window.addEventListener("resize", () => { drawList(); drawSheet(); });
 drawComposer();

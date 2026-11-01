@@ -16,3 +16,10 @@ export function routeFromHash(hash) {
   if (Object.hasOwn(REDIRECTS, value)) return { view: "redirect", jobID: "", redirect: REDIRECTS[value] };
   return { view: value, jobID: String(hash).replace(/^#\/?/, "").split("/")[1] ?? "" };
 }
+
+// "#/home?group=done" -> { group: "done" }. Unknown groups read as "all".
+export function homeParams(hash) {
+  const q = String(hash ?? "").split("?")[1] ?? "";
+  const g = new URLSearchParams(q).get("group");
+  return { group: ["needs", "running", "done"].includes(g) ? g : "all" };
+}
