@@ -22,6 +22,10 @@ export function createBatch() {
       return out;
     },
     undo() { if (undo) { batch = undo; undo = null; } },
+    // Put comments back (a queued steer was undone); they go ahead of any new ones.
+    restore(items = []) { batch = [...items, ...batch]; undo = null; },
+    // The comments the last send consumed, for attaching to a queued message.
+    get sent() { return undo ? undo.slice() : []; },
   };
 }
 

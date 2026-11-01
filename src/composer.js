@@ -32,10 +32,10 @@ export function createComposer({ repos = [], branches = [], agents = [], runners
       if (onSend) onSend(task);
       return task;
     },
-    steer(text) {
+    steer(text, comments = []) {
       const t = String(text ?? "").trim();
       if (!t) return null;
-      const item = { id: nextId++, text: t };
+      const item = { id: nextId++, text: t, comments };
       state.queue.push(item);
       return item;
     },
@@ -45,6 +45,8 @@ export function createComposer({ repos = [], branches = [], agents = [], runners
       state.queue.splice(i, 1);
       return true;
     },
+    // The queued item, so Undo can hand its line comments back to the batch.
+    peek(id) { return state.queue.find((q) => q.id === id) ?? null; },
     delivered(id) { api.undo(id); },
   };
   return api;

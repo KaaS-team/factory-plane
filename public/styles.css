@@ -60,6 +60,8 @@ button.dl { cursor:pointer; }
   #pane { grid-column:2; border-top:1px solid var(--line); max-height:40vh; }
 }
 @media (min-width: 1200px) {
+  .pair { flex-direction:row; }
+  .pair img { min-width:0; flex:1; }
   .shell { grid-template-columns:280px 1fr 360px; }
   #pane { grid-column:3; grid-row:1 / 4; border-top:0; border-left:1px solid var(--line); max-height:none; }
 }

@@ -223,7 +223,11 @@ document.addEventListener("input", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || e.shiftKey || e.target.name !== "text" || onHome() || !current) return;
   e.preventDefault();
-  if (composer.steer(e.target.value)) { e.target.value = ""; drawComposer(); }
+  if (!e.target.value.trim()) return;
+  const message = batch.send(e.target.value.trim());
+  composer.steer(message, batch.sent);
+  e.target.value = "";
+  drawComposer();
 });
 document.addEventListener("submit", (e) => {
   if (!e.target.closest("form.composer")) return;
@@ -237,7 +241,12 @@ document.addEventListener("submit", (e) => {
 });
 $("composer").addEventListener("click", (e) => {
   const u = e.target.closest("[data-undo]");
-  if (u) { composer.undo(Number(u.dataset.undo)); drawComposer(); }
+  if (u) {
+    const id = Number(u.dataset.undo);
+    batch.restore(composer.peek(id)?.comments);
+    composer.undo(id);
+    drawComposer();
+  }
 });
 $("view").addEventListener("toggle", (e) => {
   const name = e.target.dataset?.stage;
