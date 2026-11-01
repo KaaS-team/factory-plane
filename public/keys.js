@@ -18,3 +18,15 @@ export function commandAction(cmd, run) {
   if (cmd.needsApproval) return shortcutAction("a", run) ? { act: "approve" } : null;
   return { act: cmd.id };
 }
+
+// What an action name does in the page: { compose, focus, go, openUrl }. DOM-free.
+// compose reveals the composer (hidden under 600px until asked for).
+export function actionEffect(name, run) {
+  if (name === "new-task" || name === "request-changes") return { compose: true, focus: "#composer-form textarea" };
+  if (name === "switch-repo") return { go: "#/home", focus: "#repo-switch" };
+  if (name === "open-pr") {
+    const url = run?.pr?.url;
+    return typeof url === "string" && url.startsWith("https://") ? { openUrl: url } : null;
+  }
+  return null;
+}
