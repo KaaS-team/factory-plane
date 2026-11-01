@@ -30,3 +30,26 @@ function quote(batch) {
   const quoted = batch.map((c) => `> ${c.file}:${c.line}\n> ${c.text}`).join("\n\n");
   return quoted + "\n\n";
 }
+
+// Parse a unified-diff patch into display lines. Added and context lines carry
+// the new-side line number and are commentable; removed lines and hunk
+// headers carry line: null.
+export function diffLines(file, patch) {
+  const out = [];
+  let n = null;
+  for (const text of String(patch ?? "").split("\n")) {
+    if (text.startsWith("@@")) {
+      n = newStartOfHunk(text);
+      out.push({ kind: "hunk", text, file, line: null });
+    } else if (n === null || text.startsWith("\\")) {
+      continue;
+    } else if (text.startsWith("+")) {
+      out.push({ kind: "add", text, file, line: n++ });
+    } else if (text.startsWith("-")) {
+      out.push({ kind: "del", text, file, line: null });
+    } else {
+      out.push({ kind: "ctx", text, file, line: n++ });
+    }
+  }
+  return out;
+}
