@@ -11,7 +11,7 @@ import { renderStageBlocks } from "./view-run.js";
 import { renderSettings } from "./view-settings.js";
 import { renderPane, renderBatch } from "./view-pane.js";
 import { renderPalette, renderSegments, renderPhoneTabs, renderSheet } from "./view-palette.js";
-import { keyAction, commandAction } from "./keys.js";
+import { keyAction, commandAction, actionEffect } from "./keys.js";
 
 const $ = (id) => document.getElementById(id);
 let composer = createComposer({ repos: [], branches: [], agents: [], runners: [] });
@@ -129,10 +129,18 @@ async function approve() {
   drawSheet();
 }
 
+function focusSoon(sel) { setTimeout(() => document.querySelector(sel)?.focus(), 0); }
+
 function act(name) {
-  if (name === "approve") approve();
-  else if (name === "new-task") { document.body.classList.add("compose"); $("composer-form").querySelector("textarea")?.focus(); }
-  else if (name === "request-changes") $("composer-form").querySelector("textarea")?.focus();
+  if (name === "approve") { approve(); return; }
+  const fx = actionEffect(name, current);
+  if (!fx) return;
+  if (fx.compose) document.body.classList.add("compose");
+  if (fx.openUrl) window.open(fx.openUrl, "_blank", "noopener");
+  if (fx.go && location.hash !== fx.go) {
+    window.addEventListener("hashchange", () => focusSoon(fx.focus), { once: true });
+    location.hash = fx.go;
+  } else if (fx.focus) focusSoon(fx.focus);
 }
 
 function drawPalette() {
@@ -164,6 +172,8 @@ async function load() {
   if (onHome()) drawComposer();
   try { me = await getJSON("/api/me"); } catch { me = null; }
   drawList();
+  drawPane();
+  if (current && phone()) drawRun();
 }
 
 document.addEventListener("keydown", (e) => {

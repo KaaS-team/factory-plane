@@ -23,8 +23,8 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 #gear { background:transparent; color:var(--fg); border:1px solid var(--line); }
 [hidden] { display:none !important; }
 #pane { border-top:1px solid var(--line); padding:.75rem; overflow:auto; }
-[role=tablist] { display:flex; gap:.25rem; flex-wrap:wrap; border-bottom:1px solid var(--line); }
-[role=tab] { background:transparent; color:var(--fg); border-bottom:3px solid transparent; min-height:44px; }
+[role=tablist] { display:flex; gap:.1rem; flex-wrap:wrap; border-bottom:1px solid var(--line); }
+[role=tab] { background:transparent; color:var(--fg); border-bottom:3px solid transparent; min-height:44px; padding:.4rem .4rem; font-size:.9rem; }
 [role=tab][aria-selected=true] { border-bottom-color:var(--accent); font-weight:600; }
 .dl { display:block; width:100%; text-align:left; background:transparent; color:var(--fg); padding:0 .25rem; font:inherit; white-space:pre-wrap; }
 button.dl { cursor:pointer; }
