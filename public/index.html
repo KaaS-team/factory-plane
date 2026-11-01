@@ -12,11 +12,19 @@
     <header><h1>Tasks</h1>
       <button id="gear" type="button" aria-expanded="false" aria-controls="settings" aria-label="Settings">⚙</button></header>
     <div id="settings" hidden role="region" aria-labelledby="settings-title"></div>
+    <div id="segments"></div>
     <div id="list"></div>
+    <button id="newtask" type="button">New task</button>
   </aside>
   <main id="view" tabindex="-1">Select a task.</main>
-  <div id="composer"></div>
+  <aside id="pane" aria-label="Review" hidden></aside>
+  <div id="composer"><div id="batch"></div><div id="composer-form"></div></div>
 </div>
+<div id="sheet" hidden></div>
+<dialog id="palette" aria-label="Command palette">
+  <input id="palette-input" type="text" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-label="Type a command" autocomplete="off">
+  <div id="palette-list"></div>
+</dialog>
 <script type="module" src="app.js"></script>
 </body>
 </html>
