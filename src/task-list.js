@@ -41,3 +41,14 @@ export function taskRow(run, now = Date.now()) {
 export function filterByRepo(runs, repo) {
   return repo ? runs.filter((r) => r.repo === repo) : runs;
 }
+
+// Case-insensitive match on title, repo and branch.
+export function searchRuns(runs, query) {
+  const q = String(query ?? "").trim().toLowerCase();
+  if (!q) return runs;
+  return runs.filter((r) => [r.title, r.repo, r.branch].some((v) => String(v ?? "").toLowerCase().includes(q)));
+}
+
+export function repoList(runs) {
+  return [...new Set(runs.map((r) => r.repo).filter(Boolean))].sort();
+}

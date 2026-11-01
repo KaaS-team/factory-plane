@@ -29,3 +29,29 @@ export function renderComposer(state, opts = {}, canSend = false) {
     `<label class="chip">mode <select name="mode"><option value="build"${state.mode === "build" ? " selected" : ""}>Build</option><option value="ask"${state.mode === "ask" ? " selected" : ""}>Ask</option></select></label>` +
     `<button type="submit"${canSend ? "" : " disabled"}>Send</button></div></form>`;
 }
+
+export function renderQueue(queue = []) {
+  if (!queue.length) return "";
+  return `<ul class="queue" aria-label="Queued messages">` + queue.map((q) =>
+    `<li>${esc(q.text)} <button type="button" data-undo="${esc(q.id)}">Undo</button></li>`).join("") + `</ul>`;
+}
+
+export function renderSearch(query = "") {
+  return `<input id="search" type="search" value="${esc(query)}" placeholder="Search tasks" aria-label="Search tasks">`;
+}
+
+export function renderRepoSwitcher(repos = [], selected = "") {
+  const opts = repos.map((r) => `<option value="${esc(r)}"${r === selected ? " selected" : ""}>${esc(r)}</option>`).join("");
+  return `<label class="repo-switch">Repo <select id="repo-switch"><option value=""${selected ? "" : " selected"}>All repos</option>${opts}</select></label>`;
+}
+
+// Home: large composer, then Needs you cards.
+export function renderHome(state, opts, canSend, runs, now = Date.now()) {
+  const needs = groupRuns(runs).needs.map((run) => {
+    const r = taskRow(run, now);
+    return `<li class="card"><a href="#/run/${encodeURIComponent(r.id)}"><strong>${esc(r.line1.title)}</strong> ` +
+      `<span class="l2">${esc(r.line2.repo)} · ${esc(r.line2.size)} · ${esc(r.line2.age)}</span></a></li>`;
+  }).join("");
+  return `<section class="home"><h2>New task</h2>${renderComposer(state, opts, canSend)}` +
+    `<h2>Needs you <span class="count">${needs ? needs.split("</li>").length - 1 : 0}</span></h2><ul class="cards">${needs}</ul></section>`;
+}
