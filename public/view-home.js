@@ -4,16 +4,19 @@ import { groupRuns, taskRow } from "../src/task-list.js";
 
 const GROUPS = [["needs", "Needs you"], ["running", "Running"], ["done", "Done"]];
 
-export function renderTaskList(runs, now = Date.now()) {
+export function renderTaskList(runs, now = Date.now(), opts = {}) {
   const g = groupRuns(runs);
-  return GROUPS.map(([key, label]) => {
+  const single = GROUPS.some(([key]) => key === opts.only);
+  const groups = single ? GROUPS.filter(([key]) => key === opts.only) : GROUPS;
+  return groups.map(([key, label]) => {
     const rows = g[key].map((run) => {
       const r = taskRow(run, now);
       return `<li><a class="row" href="#/run/${encodeURIComponent(r.id)}">` +
         `<span class="l1"><span class="status status-${esc(r.line1.status)}">${esc(r.line1.status)}</span> <span class="title">${esc(r.line1.title)}</span></span>` +
         `<span class="l2">${esc(r.line2.repo)} · <code>${esc(r.line2.branch)}</code> · ${esc(r.line2.size)} · ${esc(r.line2.age)}</span></a></li>`;
     }).join("");
-    return `<section class="group" aria-label="${esc(label)}"><h2>${esc(label)} <span class="count">${g[key].length}</span></h2><ul>${rows}</ul></section>`;
+    const body = single && !g[key].length ? `<p class="empty">Nothing here.</p>` : `<ul>${rows}</ul>`;
+    return `<section class="group" aria-label="${esc(label)}"><h2>${esc(label)} <span class="count">${g[key].length}</span></h2>${body}</section>`;
   }).join("");
 }
 
