@@ -1,5 +1,6 @@
 // Keyboard and command mapping. DOM-free: takes plain event-like objects.
 import { isPaletteKey, shortcutAction } from "../src/palette.js";
+import { httpsUrl } from "../src/safe-url.js";
 
 const TYPING = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
@@ -25,8 +26,8 @@ export function actionEffect(name, run) {
   if (name === "new-task" || name === "request-changes") return { compose: true, focus: "#composer-form textarea" };
   if (name === "switch-repo") return { go: "#/home", focus: "#repo-switch" };
   if (name === "open-pr") {
-    const url = run?.pr?.url;
-    return typeof url === "string" && url.startsWith("https://") ? { openUrl: url } : null;
+    const url = httpsUrl(run?.pr?.url);
+    return url ? { openUrl: url } : null;
   }
   return null;
 }
