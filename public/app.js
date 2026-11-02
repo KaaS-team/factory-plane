@@ -77,8 +77,9 @@ function drawList() {
   const counts = Object.fromEntries(SEGMENTS.map((s) => [s, g[keys[s]].length]));
   $("segments").innerHTML = renderSegments(segment, counts);
   const scoped = searchRuns(filterByRepo(runs, repoFilter), query);
-  const shown = phone() ? groupRuns(scoped)[keys[segment]] : (group === "all" ? scoped : groupRuns(scoped)[group]);
-  $("list").innerHTML = renderTaskList(shown);
+  $("list").innerHTML = phone()
+    ? renderTaskList(scoped, Date.now(), { only: keys[segment] })
+    : renderTaskList(group === "all" ? scoped : groupRuns(scoped)[group]);
   $("list-tools").innerHTML = renderSearch(query) + renderRepoSwitcher(repoList(runs), repoFilter);
   if (runs.length === 0) $("list").insertAdjacentHTML("beforeend", `<p class="empty">No tasks. The data API is not built yet.</p>`);
 }
