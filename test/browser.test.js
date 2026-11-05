@@ -6,7 +6,8 @@ import { createServer } from "../src/server.js";
 
 let chromium = null;
 try { ({ chromium } = createRequire(import.meta.url)("playwright")); } catch { /* skipped below */ }
-const skip = chromium ? false : "playwright not installed";
+// CI must run these: a missing playwright fails there instead of skipping.
+const skip = chromium || process.env.CI ? false : "playwright not installed";
 
 const repo = "KaaS-team/demo";
 const detail = { id: "r1", title: "Add login", repo, branch: "b", status: "awaiting_approval", stage: "plan", updated_at: new Date().toISOString(),

@@ -73,3 +73,6 @@ button.dl { cursor:pointer; }
 .stages { list-style:none; margin:0; padding:0; }
 .queue li { border-bottom:1px solid var(--line); padding:.25rem 0; }
 #list-tools input, #list-tools select { width:100%; margin:.25rem 0; background:var(--bg); color:var(--fg); border:1px solid var(--line); padding:.4rem; font:inherit; }
+/* The pane is 360px wide: its tabs share one row at any system font, shrinking instead of wrapping. */
+#pane [role=tablist] { flex-wrap:nowrap; }
+#pane [role=tab] { flex:1 1 0; min-width:0; padding-inline:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
