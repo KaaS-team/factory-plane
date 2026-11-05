@@ -6,5 +6,8 @@
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "check": "node --check src/approval-card.js && node --check src/board.js && node --check src/backlog.js && node --check src/pane.js && node --check src/line-comments.js && node --check src/preview.js && node --check src/safe-url.js && node --check src/palette.js && node --check src/phone.js && node --check src/routes.js && node --check src/task-list.js && node --check src/stage-blocks.js && node --check src/composer.js && node --check src/server.js && node --check public/app.js && node --check public/html.js && node --check public/view-home.js && node --check public/view-run.js && node --check public/view-settings.js && node --check public/view-pane.js && node --check public/view-palette.js && node --check public/keys.js && node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "playwright": "1.64.0"
   }
 }
